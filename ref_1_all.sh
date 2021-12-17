@@ -68,5 +68,4 @@ done >> "${TARGET}/chrom_rename.txt"
 for i in "${!chroms_long[@]}"; do
   /bin/bash ref_2_chr.sh ${TARGET} ${chroms_num[i]} ${chroms_z[i]} ${chroms_long[i]}
 done
-wait
 

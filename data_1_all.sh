@@ -32,11 +32,13 @@ chroms_long=( "chr1" "chr2" "chr3" "chr4" "chr5" "chr6" "chr7" "chr8" "chr9" "ch
 #chroms_long=( "chr9" "chr22" )
 
 # split each chromosome
-# TODO use xargs to limit concurrent operations
+# use xargs to limit concurrent operations otherwise out of memory
+rm -f "${WORKDIR}/data_2_chr.sh"
 for i in "${!chroms_long[@]}"; do
-  /bin/bash data_2_chr.sh "${VCF}" ${chroms_num[i]} ${chroms_z[i]} ${chroms_long[i]} "${WORKDIR}" "${REF}"
+  echo /bin/bash data_2_chr.sh "${VCF}" ${chroms_num[i]} ${chroms_z[i]} ${chroms_long[i]} "${WORKDIR}" "${REF}" >> "${WORKDIR}/data_2_chr.sh"
 done
-wait
+xargs --max-args 1 --arg-file "${WORKDIR}/data_2_chr.sh" --max-procs 8 --replace bash -c "{}"
+
 
 # combine output files together
 if [ -n `dirname "${OUT}"` ]; then
