@@ -63,7 +63,9 @@ rm -f /beagle/wrk/data_2_chr.sh
 for i in "${!chroms_long[@]}"; do
   echo /bin/bash /beagle/data_2_chr.sh "${VCF}" ${chroms_z[i]} ${chroms_long[i]} >> /beagle/wrk/data_2_chr.sh
 done
-xargs --max-args 1 --arg-file /beagle/wrk/data_2_chr.sh --max-procs `nproc` --replace bash -c "{}"
+# use some processors for beagle
+# beagle will run with multiple threads, plus we want to avoid using too much memory too
+xargs --max-args 1 --arg-file /beagle/wrk/data_2_chr.sh --max-procs $((`nproc`/4)) --replace bash -c "{}"
 rm -f /beagle/wrk/data_2_chr.sh
 
 
