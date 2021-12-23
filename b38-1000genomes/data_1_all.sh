@@ -76,3 +76,6 @@ if [ -n `dirname "${OUT}"` ]; then
 fi
 # combine output files together
 bcftools concat --no-version /beagle/wrk/reheader.*.vcf.gz -Oz -o "${OUT}"
+
+# cleanup anything leftover
+rm -f /beagle/wrk/*

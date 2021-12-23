@@ -30,6 +30,14 @@ java -jar bin/conform-gt.jar \
   ref="/beagle/ref/${CHROM_Z}.vcf.gz" \
   out="/beagle/wrk/conform-gt.${CHROM_Z}"
 
+# TODO check the vcf is a reasonable size
+
+# cleanup the clean VCF as it is no longer needed
+rm -f "/beagle/wrk/clean.${CHROM_Z}.vcf.gz"
+
+# cleanup the conform-gt log as it is no longer needed
+rm -f "/beagle/wrk/conform-gt.${CHROM_Z}.log"
+
 # run the imputation
 # use the VCF that conform-gt produces that matches the reference
 # wants reference in bref3 format, can accept vcf but 33% slower
@@ -42,6 +50,12 @@ java -jar bin/beagle.jar \
   impute=true \
   out="/beagle/wrk/beagle.${CHROM_Z}"
 
+# cleanup the conform-gt VCF now it is no longer needed
+rm -f "/beagle/wrk/conform-gt.${CHROM_Z}.vcf.gz"
+
+# cleanup the beagle log as it is no longer needed
+rm -f "/beagle/wrk/beagle.${CHROM_Z}.log"
+
 # after imputation, beagle leaves out an necessary header line
 # ##contig=<ID=9>
 rm -f "/beagle/wrk/header.${CHROM_Z}.txt"
@@ -49,3 +63,5 @@ bcftools view -h "/beagle/wrk/beagle.${CHROM_Z}.vcf.gz" | head -n -1 > "/beagle/
 echo "##contig=<ID=${CHROM_LONG}>" >> "/beagle/wrk/header.${CHROM_Z}.txt"
 bcftools view -h "/beagle/wrk/beagle.${CHROM_Z}.vcf.gz" | tail -n 1 >> "/beagle/wrk/header.${CHROM_Z}.txt"
 bcftools reheader -h "/beagle/wrk/header.${CHROM_Z}.txt" -o "/beagle/wrk/reheader.${CHROM_Z}.vcf.gz" "/beagle/wrk/beagle.${CHROM_Z}.vcf.gz"
+
+rm -f "/beagle/wrk/header.${CHROM_Z}.txt" "/beagle/wrk/beagle.${CHROM_Z}.vcf.gz"
