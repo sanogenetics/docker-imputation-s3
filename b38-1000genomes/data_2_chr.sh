@@ -59,9 +59,9 @@ rm -f "/beagle/wrk/beagle.${CHROM_Z}.log"
 # after imputation, beagle leaves out an necessary header line
 # ##contig=<ID=9>
 rm -f "/beagle/wrk/header.${CHROM_Z}.txt"
-bcftools view -h "/beagle/wrk/beagle.${CHROM_Z}.vcf.gz" | head -n -1 > "/beagle/wrk/header.${CHROM_Z}.txt"
+bcftools view -h --no-version "/beagle/wrk/beagle.${CHROM_Z}.vcf.gz" | head -n -1 > "/beagle/wrk/header.${CHROM_Z}.txt"
 echo "##contig=<ID=${CHROM_LONG}>" >> "/beagle/wrk/header.${CHROM_Z}.txt"
-bcftools view -h "/beagle/wrk/beagle.${CHROM_Z}.vcf.gz" | tail -n 1 >> "/beagle/wrk/header.${CHROM_Z}.txt"
+bcftools view -h --no-version "/beagle/wrk/beagle.${CHROM_Z}.vcf.gz" | tail -n 1 >> "/beagle/wrk/header.${CHROM_Z}.txt"
 bcftools reheader -h "/beagle/wrk/header.${CHROM_Z}.txt" -o "/beagle/wrk/reheader.${CHROM_Z}.vcf.gz" "/beagle/wrk/beagle.${CHROM_Z}.vcf.gz"
 
 rm -f "/beagle/wrk/header.${CHROM_Z}.txt" "/beagle/wrk/beagle.${CHROM_Z}.vcf.gz"
