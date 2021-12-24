@@ -48,6 +48,8 @@ java -jar bin/beagle.jar \
   map="/beagle/ref/plink.${CHROM_LONG}.GRCh38.map" \
   nthreads=16 \
   impute=true \
+  ap=true \
+  gp=true \
   out="/beagle/wrk/beagle.${CHROM_Z}"
 
 # cleanup the conform-gt VCF now it is no longer needed
