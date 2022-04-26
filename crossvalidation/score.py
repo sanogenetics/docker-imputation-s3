@@ -3,6 +3,7 @@ import re
 from puretabix import VCFAccumulator, get_vcf_fsm
 from puretabix.bgzip import BlockGZipReader
 from puretabix.vcf import LINE_START, VCFLine
+import argparse
 
 
 def generate_lines(filename):
@@ -81,19 +82,22 @@ def get_matches(
     orig = next(origs, None)
     sub = next(subs, None)
     while orig and sub:
+        # only compare recognized chromosomes
+        if orig.chrom not in chr_order or sub.chrom not in chr_order:
+            continue
         # if they match by position
         orig_chrom_pos = (chr_order[orig.chrom], orig.pos)
-        sub_chrom_pos = (chr_order[sub.chrom],sub.pos)
+        sub_chrom_pos = (chr_order[sub.chrom], sub.pos)
 
-#        if orig.chrom != "chr1":
-#            print(orig)
-#            print(sub)
-#            print(orig_chrom_pos)
-#            print(sub_chrom_pos)
-#            print(orig_chrom_pos == sub_chrom_pos)
-#            print(orig_chrom_pos < sub_chrom_pos)
-#            print(orig_chrom_pos > sub_chrom_pos)
-#            1/0
+        #        if orig.chrom != "chr1":
+        #            print(orig)
+        #            print(sub)
+        #            print(orig_chrom_pos)
+        #            print(sub_chrom_pos)
+        #            print(orig_chrom_pos == sub_chrom_pos)
+        #            print(orig_chrom_pos < sub_chrom_pos)
+        #            print(orig_chrom_pos > sub_chrom_pos)
+        #            1/0
 
         if orig_chrom_pos == sub_chrom_pos:
             yield orig, sub
@@ -112,20 +116,20 @@ def get_matches(
             raise RuntimeError("Unable to move on")
 
 
-def doublesplit(input:str, split1:str, split2:str):
+def doublesplit(input: str, split1: str, split2: str):
     for i in input.split(split1):
         for j in i.split(split2):
             if j:
                 yield j
 
-def get_allele(line:VCFLine) -> str:
-    options = [line.ref]+list(line.alt)
 
-    gt =line.sample[0]["GT"]
-
+def get_allele(line: VCFLine) -> str:
+    options = [line.ref] + list(line.alt)
+    gt = line.sample[0]["GT"]
     return "".join(sorted(options[int(i)] for i in doublesplit(gt, "/", "|")))
 
-def check_if_score(orig:VCFLine, sub:VCFLine):
+
+def check_if_score(orig: VCFLine, sub: VCFLine):
     # orig and sub match to same chrom ans possition
     assert chr_order[orig.chrom] == chr_order[sub.chrom]
     assert orig.pos == sub.pos
@@ -133,7 +137,7 @@ def check_if_score(orig:VCFLine, sub:VCFLine):
     # check ref matches
     assert orig.ref == sub.ref
     # check alt matches
-    #assert orig.alt == sub.alt
+    # assert orig.alt == sub.alt
 
     # check if the sub has an imputed flag
     if "IMP" in sub.info:
@@ -147,29 +151,37 @@ def check_if_score(orig:VCFLine, sub:VCFLine):
 
 if __name__ == "__main__":
 
+    parser = argparse.ArgumentParser(description="score cross-validation results")
+    parser.add_argument("original", help="path to original vcf file")
+    parser.add_argument(
+        "validation", nargs="+", help="path to split and imputed vcf file(s)"
+    )
+    args = parser.parse_args()
+
     # calculate a cross validation score
     hit = 0
     miss = 0
 
     # for each imputed subset
-    printed = set()
-    for subfilename in (
-        "/home/adam/bioinf/beagle/out/out.p01.vcf.gz",
-        #"/home/adam/bioinf/beagle/out/out.p02.vcf.gz",
-        #"/home/adam/bioinf/beagle/out/out.p03.vcf.gz",
-        #"/home/adam/bioinf/beagle/out/out.p04.vcf.gz",
-        #"/home/adam/bioinf/beagle/out/out.p05.vcf.gz",
-    ):
+    for subfilename in args.validation:
         # load the original
-        origs = generate_lines("/home/adam/bioinf/beagle/in/sano-b38.vcf.gz")
+        origs = generate_lines(args.original)
         subs = generate_lines(subfilename)
+        # track which chromosomes we've printed about
+        printed = set()
         # look for variants that are in original and imputed
         for orig, sub in get_matches(origs, subs):
+            # print first match in each chromosome
             if orig.chrom not in printed:
                 print(orig)
                 print(sub)
                 printed.add(orig.chrom)
+                # count how many are correct / incorrect
+                if hit + miss:
+                    print(hit, miss, hit / (hit + miss))
 
+            # determine if the original and imputed lines match
+            match = None
             try:
                 match = check_if_score(orig, sub)
             except Exception as e:
@@ -178,11 +190,19 @@ if __name__ == "__main__":
                 raise e
 
             if match == None:
-                pass
+                continue
             elif match:
                 hit += 1
             else:
                 miss += 1
 
+            if orig.chrom not in printed:
+                printed.add(orig.chrom)
+                # count how many are correct / incorrect
+                print(hit, miss, hit / (hit + miss))
+
+        # print score after each file
+        print(hit, miss, hit / (hit + miss))
+
     # count how many are correct / incorrect
-    print(hit, miss, hit/(hit+miss))
+    print(hit, miss, hit / (hit + miss))
